@@ -1,0 +1,8 @@
+{
+  "name": "SpeakSmart: Spin & Speak Roleplay",
+  "description": "An interactive ESL practice app using the Scenario Spinner and Gemini AI to boost fluency through realistic conversational roleplay.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": []
+}
