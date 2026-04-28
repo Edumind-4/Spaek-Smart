@@ -17,6 +17,29 @@ export default function App() {
   const [history, setHistory] = useState<Message[]>([]);
   const [report, setReport] = useState<EvaluationReport | null>(null);
 
+  const [customInput, setCustomInput] = useState('');
+  const [isCreatingCustom, setIsCreatingCustom] = useState(false);
+
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customInput.trim()) return;
+
+    const customScenario: Scenario = {
+      id: 'custom-' + Date.now(),
+      category: 'Social',
+      title: 'Custom Roleplay',
+      icon: '✨',
+      userObjective: customInput,
+      aiPersona: 'A helpful conversation partner who adapts to your custom situation.',
+      startMessage: 'Hello! I am ready for our custom roleplay. How should we begin?',
+      hints: ['Be as specific as you like', 'Feel free to lead the conversation']
+    };
+
+    setSelectedScenario(customScenario);
+    setScreen('briefing');
+    setCustomInput('');
+  };
+
   const handleSpinEnd = (category: Category) => {
     const categoryScenarios = SCENARIOS.filter(s => s.category === category);
     const randomScenario = categoryScenarios[Math.floor(Math.random() * categoryScenarios.length)];
@@ -84,51 +107,76 @@ export default function App() {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="flex-1 grid md:grid-cols-[1fr_400px] gap-10 p-10 items-center max-w-[1400px] mx-auto w-full"
+              className="flex-1 flex flex-col items-center p-6 md:p-10 max-w-[1400px] mx-auto w-full overflow-y-auto custom-scrollbar"
             >
-              <div className="spinner-section flex flex-col items-center justify-center">
-                <Spinner onSpinEnd={handleSpinEnd} />
-                <div className="mt-10 text-center space-y-3">
-                   <p className="text-sleek-text-secondary text-sm font-medium">
-                     Tap to select your random speaking challenge
-                   </p>
-                   <div className="flex gap-4 justify-center items-center">
+              <div className="w-full flex flex-col md:grid md:grid-cols-[1fr_400px] gap-10 items-center">
+                <div className="spinner-section flex flex-col items-center justify-center order-2 md:order-1">
+                  <Spinner onSpinEnd={handleSpinEnd} />
+                  <div className="mt-10 text-center space-y-3">
+                    <p className="text-sleek-text-secondary text-sm font-medium">
+                      Tap to select your random speaking challenge
+                    </p>
+                    <div className="flex gap-4 justify-center items-center flex-wrap">
                       {['TRAVEL', 'CAREER', 'SHOP', 'SOCIAL'].map(cat => (
                         <span key={cat} className="text-[10px] font-bold opacity-40 uppercase tracking-widest">{cat}</span>
                       ))}
-                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <motion.div 
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    className="flex items-center gap-2 mb-2"
-                  >
-                    <div className="px-3 py-1 bg-sleek-accent/10 text-sleek-accent rounded-full text-[10px] font-black uppercase tracking-[0.3em] border border-sleek-accent/20">
-                      The Ultimate ESL Coach
                     </div>
-                  </motion.div>
-                  <h1 className="text-5xl md:text-7xl font-black tracking-tighter leading-tight text-white">
-                    Spin. Speak.<br />
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-sleek-accent to-sleek-accent-light">Master Fluency.</span>
-                  </h1>
-                  <p className="text-sleek-text-secondary text-lg leading-relaxed">
-                    Realistic AI roleplays designed to help you conquer everyday English conversations.
-                  </p>
+                  </div>
                 </div>
 
-                <div className="flex gap-6 opacity-60">
-                   <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-                     <Music2 size={24} className="text-sleek-accent" />
-                     <span className="text-[10px] uppercase font-bold tracking-widest">Voice API</span>
-                   </div>
-                   <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
-                     <Sparkle size={24} className="text-sleek-emerald" />
-                     <span className="text-[10px] uppercase font-bold tracking-widest">Gemini AI</span>
-                   </div>
+                <div className="space-y-8 order-1 md:order-2 text-center md:text-left">
+                  <div className="space-y-4">
+                    <motion.div 
+                      initial={{ x: -20, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      className="flex items-center justify-center md:justify-start gap-2 mb-2"
+                    >
+                      <div className="px-3 py-1 bg-sleek-accent/10 text-sleek-accent rounded-full text-[10px] font-black uppercase tracking-[0.3em] border border-sleek-accent/20">
+                        The Ultimate ESL Coach
+                      </div>
+                    </motion.div>
+                    <h1 className="text-4xl md:text-7xl font-black tracking-tighter leading-tight text-white px-2 md:px-0">
+                      Spin. Speak.<br />
+                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-sleek-accent to-sleek-accent-light">Master Fluency.</span>
+                    </h1>
+                    <p className="text-sleek-text-secondary text-base md:text-lg leading-relaxed max-w-md mx-auto md:mx-0">
+                      Realistic AI roleplays designed to help you conquer everyday English conversations.
+                    </p>
+                  </div>
+
+                  {/* Custom Scenario UI */}
+                  <div className="glass-panel p-6 rounded-3xl space-y-4 border border-white/5 max-w-md mx-auto md:mx-0">
+                    <div className="flex items-center gap-3">
+                      <Sparkle className="text-sleek-accent" size={20} />
+                      <h3 className="font-bold text-white tracking-tight">Create Your Own Scene</h3>
+                    </div>
+                    <form onSubmit={handleCustomSubmit} className="space-y-3">
+                      <textarea
+                        value={customInput}
+                        onChange={(e) => setCustomInput(e.target.value)}
+                        placeholder="e.g., I'm visiting a friend in London and we're choosing a movie..."
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm focus:ring-1 focus:ring-sleek-accent outline-none text-white placeholder:text-sleek-text-secondary/40 resize-none h-24"
+                      />
+                      <button
+                        type="submit"
+                        disabled={!customInput.trim()}
+                        className="w-full py-3 bg-sleek-accent text-white rounded-xl font-bold text-sm hover:bg-sleek-accent-light transition-all active:scale-95 disabled:opacity-30 flex items-center justify-center gap-2"
+                      >
+                        Start Custom Roleplay
+                      </button>
+                    </form>
+                  </div>
+
+                  <div className="hidden md:flex gap-6 opacity-60">
+                    <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
+                      <Music2 size={24} className="text-sleek-accent" />
+                      <span className="text-[10px] uppercase font-bold tracking-widest">Voice API</span>
+                    </div>
+                    <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5">
+                      <Sparkle size={24} className="text-sleek-emerald" />
+                      <span className="text-[10px] uppercase font-bold tracking-widest">Gemini AI</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

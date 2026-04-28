@@ -8,6 +8,7 @@ export interface Scenario {
   userObjective: string;
   aiPersona: string;
   startMessage: string;
+  hints?: string[];
 }
 
 export interface Message {

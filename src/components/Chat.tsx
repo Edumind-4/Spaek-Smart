@@ -46,15 +46,20 @@ export default function Chat({ scenario, onEnd, onBack }: ChatProps) {
       };
 
       recognitionRef.current.onerror = (event: any) => {
-        console.error('Speech recognition error', event.error);
-        setIsListening(false);
+        if (event.error === 'no-speech') {
+          // Standard timeout, just reset state
+          setIsListening(false);
+        } else {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+        }
       };
 
       recognitionRef.current.onend = () => {
         setIsListening(false);
       };
     }
-  }, []);
+  }, [isMuted, scenario.startMessage]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -64,6 +69,7 @@ export default function Chat({ scenario, onEnd, onBack }: ChatProps) {
 
   const speak = (text: string) => {
     if (isMuted) return;
+    window.speechSynthesis.cancel(); // Stop current speech
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
     // Use a natural sounding voice if available
@@ -84,21 +90,31 @@ export default function Chat({ scenario, onEnd, onBack }: ChatProps) {
 
   const handleMicStart = () => {
     if (recognitionRef.current) {
-      setInputText('');
-      setIsListening(true);
-      recognitionRef.current.start();
+      try {
+        setInputText('');
+        setIsListening(true);
+        recognitionRef.current.start();
+      } catch (err) {
+        console.warn('Recognition start failed', err);
+        setIsListening(false);
+      }
     } else {
-      alert('Speech recognition is not supported in this browser.');
+      console.error('Speech recognition is not supported in this browser.');
     }
   };
 
   const handleMicEnd = () => {
     if (recognitionRef.current) {
-      recognitionRef.current.stop();
-      setIsListening(false);
-      // Automatically send if there's text
-      if (inputText.trim()) {
-        handleSubmit();
+      try {
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.warn('Recognition stop failed', err);
+      } finally {
+        setIsListening(false);
+        // Automatically send if there's text
+        if (inputText.trim()) {
+          handleSubmit();
+        }
       }
     }
   };
@@ -203,52 +219,47 @@ export default function Chat({ scenario, onEnd, onBack }: ChatProps) {
       </div>
 
       {/* Footer / Input */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-[calc(100%-40px)] max-w-2xl z-40">
-        <div className="glass-panel p-3 rounded-[32px] flex gap-3 items-center shadow-2xl">
+      <div className="p-4 bg-transparent backdrop-blur-sm z-40">
+        <div className="glass-panel p-2 md:p-3 rounded-[32px] flex gap-2 md:gap-3 items-center shadow-2xl max-w-2xl mx-auto w-full">
           <input
             type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             disabled={isLoading}
-            placeholder={isListening ? "Listening..." : "Speak now or type here..."}
-            className="flex-1 bg-white/5 border-none rounded-2xl px-5 py-3 text-sm focus:ring-1 focus:ring-sleek-accent transition-all outline-none disabled:opacity-50 text-white placeholder:text-sleek-text-secondary/40"
+            placeholder={isListening ? "Listening..." : "Speak or type..."}
+            className="flex-1 bg-white/5 border-none rounded-2xl px-4 md:px-5 py-2 md:py-3 text-sm focus:ring-1 focus:ring-sleek-accent transition-all outline-none disabled:opacity-50 text-white placeholder:text-sleek-text-secondary/40 min-w-0"
           />
           
-          <button
-            type="button"
-            onMouseDown={handleMicStart}
-            onMouseUp={handleMicEnd}
-            onTouchStart={handleMicStart}
-            onTouchEnd={handleMicEnd}
-            className={`w-12 h-12 rounded-full transition-all flex items-center justify-center relative shadow-lg ${
-              isListening 
-                ? 'bg-sleek-rose text-white scale-110 shadow-sleek-rose/40 animate-[pulse_2s_infinite]' 
-                : 'bg-white/10 text-sleek-text-secondary hover:bg-white/20'
-            }`}
-             style={{
-               animation: isListening ? 'pulse 2s infinite' : 'none'
-             }}
-          >
-            <Mic size={20} />
-            <style>{`
-              @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
-                70% { box-shadow: 0 0 0 15px rgba(244, 63, 94, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
-              }
-            `}</style>
-          </button>
+          <div className="flex gap-1 md:gap-2 shrink-0">
+            <button
+              type="button"
+              onMouseDown={handleMicStart}
+              onMouseUp={handleMicEnd}
+              onTouchStart={handleMicStart}
+              onTouchEnd={handleMicEnd}
+              className={`w-10 h-10 md:w-12 md:h-12 rounded-full transition-all flex items-center justify-center relative shadow-lg ${
+                isListening 
+                  ? 'bg-sleek-rose text-white scale-110 shadow-sleek-rose/40 animate-[pulse_2s_infinite]' 
+                  : 'bg-white/10 text-sleek-text-secondary hover:bg-white/20'
+              }`}
+               style={{
+                 animation: isListening ? 'pulse 2s infinite' : 'none'
+               }}
+            >
+              <Mic size={18} />
+            </button>
 
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!inputText.trim() || isLoading}
-            className="bg-sleek-indigo text-white w-12 h-12 rounded-full hover:bg-sleek-accent-light transition-all disabled:opacity-20 flex items-center justify-center shadow-lg shadow-sleek-indigo/20"
-          >
-            <Send size={20} />
-          </button>
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!inputText.trim() || isLoading}
+              className="bg-sleek-indigo text-white w-10 h-10 md:w-12 md:h-12 rounded-full hover:bg-sleek-accent-light transition-all disabled:opacity-20 flex items-center justify-center shadow-lg shadow-sleek-indigo/20"
+            >
+              <Send size={18} />
+            </button>
+          </div>
         </div>
-        <p className="text-[9px] text-center text-sleek-text-secondary mt-3 font-bold uppercase tracking-[0.2em] opacity-40">
+        <p className="hidden md:block text-[9px] text-center text-sleek-text-secondary mt-3 font-bold uppercase tracking-[0.2em] opacity-40">
           Listening for native patterns and fluency markers...
         </p>
       </div>

@@ -45,14 +45,12 @@ export default function ScenarioBriefing({ scenario, onClose, onStart }: Scenari
           </div>
 
           <div className="space-y-4 py-4 border-y border-white/5">
-            <div className="flex items-center gap-4">
-               <div className="w-1.5 h-1.5 rounded-full bg-sleek-accent shadow-[0_0_8px_#6366F1]" />
-               <span className="text-xs font-semibold text-sleek-text-primary">Describe your suitcase clearly</span>
-            </div>
-            <div className="flex items-center gap-4">
-               <div className="w-1.5 h-1.5 rounded-full bg-sleek-accent shadow-[0_0_8px_#6366F1]" />
-               <span className="text-xs font-semibold text-sleek-text-primary">Check for the nearest counter</span>
-            </div>
+            {(scenario.hints || ['Stay natural and polite', 'Listen carefully to the AI response']).map((hint, i) => (
+              <div key={i} className="flex items-center gap-4">
+                 <div className="w-1.5 h-1.5 rounded-full bg-sleek-accent shadow-[0_0_8px_#6366F1]" />
+                 <span className="text-xs font-semibold text-sleek-text-primary">{hint}</span>
+              </div>
+            ))}
           </div>
 
           <div className="p-5 bg-black/20 rounded-2xl border border-white/5 space-y-2">
