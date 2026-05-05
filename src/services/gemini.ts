@@ -29,7 +29,7 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> =>
 
 export const chatWithGemini = async (scenario: Scenario, history: Message[]) => {
   return withRetry(async () => {
-    const model = "gemini-2.5-flash";
+    const model = "gemini-2.5-flash-lite";
     
     const systemInstruction = `
       Role: ${scenario.aiPersona}
