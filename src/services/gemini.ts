@@ -5,7 +5,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY as string });
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
-const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> => {
+const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 5): Promise<T> => {
   let lastError: any;
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -13,14 +13,27 @@ const withRetry = async <T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> =>
     } catch (error: any) {
       lastError = error;
       const errorMsg = error?.message || error?.toString() || '';
-      const isRateLimit = errorMsg.includes('429') || error?.status === 429;
+      const isRateLimit = 
+        errorMsg.includes('429') || 
+        error?.status === 429 || 
+        error?.response?.status === 429 ||
+        errorMsg.toLowerCase().includes('too many requests') ||
+        errorMsg.toLowerCase().includes('quota exceeded');
       
       if (isRateLimit && i < maxRetries - 1) {
+        // Exponential backoff: 2s, 4s, 8s, 16s... + jitter
         const waitTime = Math.pow(2, i + 1) * 1000 + Math.random() * 1000;
-        console.log(`Rate limited (429). Retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${maxRetries})`);
+        console.warn(`Rate limited (429). Retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${maxRetries})`);
         await delay(waitTime);
         continue;
       }
+      
+      if (isRateLimit) {
+        console.error("Gemini API: Rate limit hit and exceeded maximum retries.");
+      } else {
+        console.error("Gemini API Error:", errorMsg);
+      }
+      
       throw error;
     }
   }
